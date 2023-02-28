@@ -12,7 +12,7 @@ def query(filename):
 
 # API and token (to be moved to secrets.toml)
 API_URL = "https://api-inference.huggingface.co/models/petroglyphs-nlp-consulting/GeoImages57kB7"
-headers = {"Authorization": "Bearer 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"}
+headers = {"Authorization": st.secrets["api_token"]}
 
 
 # Streamlit interface
