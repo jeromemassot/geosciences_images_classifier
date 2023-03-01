@@ -1,24 +1,30 @@
 import streamlit as st
 from PIL import Image
 import requests
+import time
+import os
 
 
-# HuggingFace inference query method
-def query(filename):
-    with open(filename, "rb") as f:
-        data = f.read()
-    response = requests.post(API_URL, headers=headers, data=data)
-    return response.json()
+models = {
+    "B0": "https://api-inference.huggingface.co/models/petroglyphs-nlp-consulting/GeoImages57kB0",
+    "B7": "https://api-inference.huggingface.co/models/petroglyphs-nlp-consulting/GeoImages57kB7"
+}
 
-# API and token (to be moved to secrets.toml)
-API_URL = "https://api-inference.huggingface.co/models/petroglyphs-nlp-consulting/GeoImages57kB7"
 headers = {"Authorization": st.secrets["api_token"]}
 
+# HuggingFace inference query method
+def query(filename, model=models["B7"]):
+    with open(filename, "rb") as f:
+        data = f.read()
+    response = requests.post(model, headers=headers, data=data)
+    return response.json()
 
 # Streamlit interface
 
 logo = Image.open("./logo.png")
 st.sidebar.image(logo)
+
+model = st.sidebar.selectbox("Choose the model", list(models.keys()))
 
 st.title("Geosciences Images Classifier")
 
@@ -38,10 +44,17 @@ uploaded_file = st.file_uploader("Upload Image", type=['jpg', 'jpeg'])
 
 # display the original image
 if uploaded_file:
-    image = Image.open(uploaded_file)
-    image.save("./temp.jpg")
-    st.image(image, width=200)
-    disabled=False
+    if not os.path.exists("./temp.jpg"):
+        image = Image.open(uploaded_file)
+        image.save("./temp.jpg")
+        st.image(image, width=200)
+        disabled=False
+    else:
+        image = Image.open("./temp.jpg")
+        st.image(image, width=200)
+        disabled=False
+else:
+    st.error("Please upload an image first...")
 
 st.subheader("Image Edition")
 
@@ -69,9 +82,8 @@ if not disabled:
     
     if rotation_angle !=0 :
         im_rotate = image.rotate(rotation_angle, expand=True)
-        st.image(im_rotate, width=200)
-        image = im_rotate
-        image.save("./temp.jpg")
+        im_rotate.save("./temp.jpg")
+        st.experimental_rerun()
 
 st.subheader("Image Labeling")
 
@@ -79,4 +91,13 @@ label = st.button("Label the image...")
 
 if label:
     output = query("./temp.jpg")
-    st.write(output)
+    if type(output)!=list and 'error' in output.keys():
+        st.spinner("The model is loading...")
+        time.sleep(20)
+        output = query("./temp.jpg")
+    else:
+        os.remove("./temp.jpg")
+        cola, colb = st.columns([3, 7])
+        with cola:
+            for o in output:
+                st.slider(label=o['label'], min_value=0., max_value=1., value=o['score'], disabled=True)
