@@ -24,7 +24,11 @@ def query(filename, model=models["B7"]):
 logo = Image.open("./logo.png")
 st.sidebar.image(logo)
 
-model = st.sidebar.selectbox("Choose the model", list(models.keys()))
+model_id = st.sidebar.selectbox("Choose the model", list(models.keys()))
+
+reset = st.sidebar.button("Reset")
+if reset and os.isfile("./temp.jpg"):
+    os.remove("./temp.jpg")
 
 st.title("Geosciences Images Classifier")
 
@@ -90,7 +94,7 @@ st.subheader("Image Labeling")
 label = st.button("Label the image...")
 
 if label:
-    output = query("./temp.jpg")
+    output = query("./temp.jpg", model=models[model_id])
     if type(output)!=list and 'error' in output.keys():
         st.spinner("The model is loading...")
         time.sleep(20)
