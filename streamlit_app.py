@@ -27,7 +27,7 @@ st.sidebar.image(logo)
 model_id = st.sidebar.selectbox("Choose the model", list(models.keys()))
 
 reset = st.sidebar.button("Reset")
-if reset and os.isfile("./temp.jpg"):
+if reset and os.path.exists("./temp.jpg"):
     os.remove("./temp.jpg")
 
 st.title("Geosciences Images Classifier")
